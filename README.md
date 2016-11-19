@@ -15,6 +15,9 @@ We use the novel approach already developed by others where we define a
 This requires no scripts and nearly no configuration at all. Still, we
 present a few scripts to help this process.
 
+Apologies for several typos below - this was written in a haste for
+others to use. The scripts have been used in production for a while.
+
 ## References
 
 - <https://developer.atlassian.com/blog/2016/02/best-way-to-store-dotfiles-git-bare-repo/>
