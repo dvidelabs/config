@@ -128,28 +128,29 @@ Local changes can be pushed using for example:
     config push origin
     config push myotherhost
 
-When loggin in to the remote host after a push, use `config-sync` and
-optionally `config-alts` as discussed below.
+The remote repo name can be given as an upload argument.
 
-Changes on the remote host can be added as usal and `config pull
-myotherhost` moves changes in the opposite direction.
+When logging in to the remote host after a push, use `config-sync` and
+optionally `config-alts` as discussed below.
 
 ## config-sync
 
-After pushing changes to a remote host or pulling the local host, the
-home directory needs to be updated on the affectd host:
+After pushing changes to a remote host the home directory needs to be
+updated on the affected host using:
 
     config-sync
 
-does this - and also handles alternative configuations based on OS etc.
-- see below. Please inspect the script and make sure it works with your
+Any OS specific configurations are automatically linked if the
+`config-alts` mechanism is being used.
+
+Please inspect the script and make sure it works with your
 mode of operation because it does call --reset on the branch - otherwise
-the sync does seem to work correctly.
+the sync does not seem to work correctly.
 
 `config-sync` is also used after fetching or pulling a change from a
-remote host.
+remote host:
 
-    config push origin
+    config pull myotherhost
 
 When logging in to the remote host, the latest changes only reside in
 the git repository, not in the home directory.
@@ -216,7 +217,7 @@ If we are running on ubuntu, the above is the same as running:
 
     config-alts default ubuntu hobby misc
 
-Files are simply searched and added in order.
+Alt works by simply searching files and linking them in order.
 
 Later we can change to work using
 
@@ -224,8 +225,13 @@ Later we can change to work using
 
 Symbolic links will not be removed, only added or replaced.
 
+As an example note that `~/.gitconfig` can include files and we can thus
+use this with the alts meachinsm to switch git user name and email
+easily.
+
 When calling config-sync, config-alts is also called so the default and
-current os files are linked.
+current os files are linked, but we may still need to change our git
+user name etc. by calling `config-alts devops` etc.
 
 After config-upload, 
 When calling config-upload, `config-sync` is automatically called and
