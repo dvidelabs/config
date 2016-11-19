@@ -3,17 +3,19 @@
 Users often share their dotfiles on github no so much for social
 reasons as because it makes it very simple to bootstrap new hosts with
 these dotfiles. It is much more difficult to pull from a private
-repository because it requires upload of ssh keys which may not be
-desirable.
+repository because it requires upload of private ssh keys on one host
+fot fetch dotfiles on another host which may not be desirable.
 
 Here we present the reverse setup where a local repository can be pushed
-to a remote private server without any public hosting. There is not
-magic to this, these are just scripts to automate this.
+to a new remote private server. This server must have a public ssh key
+uploaded but then the config scripts take over without requiring any
+separate hosting.
 
-We use the novel approach already developed by others where we define a
-`config` shell function the calls git with a detached `--work-tree`.
-This requires no scripts and nearly no configuration at all. Still, we
-present a few scripts to help this process.
+For actual dotfile management we use the novel approach already
+developed by others where we define a `config` shell function the calls
+git with a detached `--worktree`.  This requires no scripts and nearly
+no configuration at all. Still, we present a few scripts to help this
+process.
 
 Apologies for several typos below - this was written in a haste for
 others to use. The scripts have been used in production for a while.
@@ -237,3 +239,10 @@ A tiny wrapper around `config-alts` that makes it possible to remember
 custom alternatives. At may be run a second time in a fresh shell to
 take advantage of settings linked in by the first run.
 
+## Bin Dir
+
+The config scripts are hosted in ~/.config/bin by default and a path is
+added to this directory. This means that this bin directory is also
+suitable for other custom scripts used frequently such, e.g. a shell
+script to push current repo to github. Just config add -f files in the
+bin dir as needed, or use the `alts` mechanism to very by host type.
