@@ -17,9 +17,6 @@ git with a detached `--worktree`. This requires no scripts and nearly
 no configuration at all. Still, we present a few scripts to help this
 process.
 
-Apologies for several typos below - this was written in a haste for
-others to use. The scripts have been used in production for a while.
-
 ## References
 
 - <https://developer.atlassian.com/blog/2016/02/best-way-to-store-dotfiles-git-bare-repo/>
@@ -54,7 +51,7 @@ The basic idea is the use of the git `--worktree` feature:
     REPO=$HOME/${CONFIG_REPO:-.config.repo}
 
     function config {
-       /usr/bin/git --git-dir=$REPO/ --work-tree=$HOME $@
+       /usr/bin/git --git-dir=$REPO/ --worktree=$HOME $@
     }
 
 This can actually be copied into .bashrc along with `git init
@@ -181,7 +178,7 @@ these alternative files and the file is then linked into the real home
 directory.
 
 For example, to `~/.bash.local` to ubuntu, but not osx simply create or
-move the file into ~/.config/alts/ubuntu/bash.local` and make sure
+move the file into `~/.config/alts/ubuntu/bash.local` and make sure
 `~/.bash.local` is absent. Then add a the entry the alts.conf and commit
 everything using `config add -f ...`:
 
