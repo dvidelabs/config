@@ -3,8 +3,8 @@
 Users often share their dotfiles on github no so much for social
 reasons as because it makes it very simple to bootstrap new hosts with
 these dotfiles. It is much more difficult to pull from a private
-repository because it requires upload of private ssh keys on one host
-fot fetch dotfiles on another host which may not be desirable.
+repository because it requires upload of a private ssh key on one host
+in order to fetch dotfiles on another host. This may not be desirable.
 
 Here we present the reverse setup where a local repository can be pushed
 to a new remote private server. This server must have a public ssh key
@@ -13,7 +13,7 @@ separate hosting.
 
 For actual dotfile management we use the novel approach already
 developed by others where we define a `config` shell function the calls
-git with a detached `--worktree`.  This requires no scripts and nearly
+git with a detached `--worktree`. This requires no scripts and nearly
 no configuration at all. Still, we present a few scripts to help this
 process.
 
@@ -49,7 +49,7 @@ it also supports a very simple and fully optional way to handle
 different operating systems without branching by the use of a minimal
 set of symlinks.
 
-The basic idea is the use of the git `--work-tree` feature:
+The basic idea is the use of the git `--worktree` feature:
 
     REPO=$HOME/${CONFIG_REPO:-.config.repo}
 
@@ -120,19 +120,24 @@ these can be tracked with:
 When loggin in to the remote host after the first upload run
 `config-setup` if alternatives are being used - see below.
 
+The upload procedure also adds the new host to the local git repo with
+an optional name (see -h).
+
 Local changes can be pushed using for example:
 
     config push origin
     config push myotherhost
 
-
 When loggin in to the remote host after a push, use `config-sync` and
 optionally `config-alts` as discussed below.
 
+Changes on the remote host can be added as usal and `config pull
+myotherhost` moves changes in the opposite direction.
+
 ## config-sync
 
-After pushing changes to a remote host, the remote home directory still
-needs to be updated.
+After pushing changes to a remote host or pulling the local host, the
+home directory needs to be updated on the affectd host:
 
     config-sync
 
