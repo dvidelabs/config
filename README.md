@@ -233,24 +233,25 @@ When calling config-sync, config-alts is also called so the default and
 current os files are linked, but we may still need to change our git
 user name etc. by calling `config-alts devops` etc.
 
-After config-upload, 
 When calling config-upload, `config-sync` is automatically called and
-therefore also `config-alts`. This ensures the proper host variant of
-`.bash.local` will be present. Any custom variants 
+therefore also `config-alts` with default and OS alternatives. This
+ensures, as an example, that the proper host variant of `.bash.local`
+will be present if `.bash.local` has been added as an alternative.
 
 ## config-install
 
-The `config-install` script is normally called by `config-upload` and
-not used directly. But it can be used to check out an existing repo with
+The `config-install` script is normally called by `config-upload` and is
+not used directly. However, it can be used to check out an existing repo with
 support for backuping up files that would be overwritten.
 
 ## config-setup
 
 A tiny wrapper around `config-alts` that makes it possible to remember
 custom alternatives. At may be run a second time in a fresh shell to
-take advantage of settings linked in by the first run.
+take advantage of settings linked in by the first run. See script source
+for details.
 
-## Bin Dir
+## bin dir
 
 The config scripts are hosted in ~/.config/bin by default and a path is
 added to this directory. This means that this bin directory is also
