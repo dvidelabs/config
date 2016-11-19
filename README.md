@@ -15,6 +15,11 @@ We use the novel approach already developed by others where we define a
 This requires no scripts and nearly no configuration at all. Still, we
 present a few scripts to help this process.
 
+## References
+
+- <https://developer.atlassian.com/blog/2016/02/best-way-to-store-dotfiles-git-bare-repo/>
+- <https://dotfiles.github.i://dotfiles.github.io>
+
 ## Quickstart
 
 Both fish and bash shells are supported and it would not be difficult to
