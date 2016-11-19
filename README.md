@@ -18,7 +18,7 @@ present a few scripts to help this process.
 ## References
 
 - <https://developer.atlassian.com/blog/2016/02/best-way-to-store-dotfiles-git-bare-repo/>
-- <https://dotfiles.github.i://dotfiles.github.io>
+- <https://dotfiles.github.io>
 
 ## Quickstart
 
