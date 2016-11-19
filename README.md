@@ -255,6 +255,7 @@ for details.
 
 The config scripts are hosted in ~/.config/bin by default and a path is
 added to this directory. This means that this bin directory is also
-suitable for other custom scripts used frequently such, e.g. a shell
-script to push current repo to github. Just config add -f files in the
-bin dir as needed, or use the `alts` mechanism to very by host type.
+suitable for other custom scripts. For example if a script is used to
+push to github or update ghpages, it would make sense to place in
+.config/bin using `config add -f ~/.config/bin/myscript`. The alts
+mechanism can even be used to very the script by OS type.
