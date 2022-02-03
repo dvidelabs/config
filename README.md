@@ -238,15 +238,17 @@ will be present if `.bash.local` has been added as an alternative.
 ## config-install
 
 The `config-install` script is normally called by `config-upload` and is
-not used directly. However, it can be used to check out an existing repo with
-support for backuping up files that would be overwritten.
+not used directly. However, it can be used to check out an existing repo
+with support for backuping up files that would be overwritten.
 
 ## config-setup
 
 A tiny wrapper around `config-alts` that makes it possible to remember
 custom alternatives. At may be run a second time in a fresh shell to
 take advantage of settings linked in by the first run. See script source
-for details.
+for details. NOTE: the config-setup refers to a .config/setup/setup.sh
+script by default. This doesn't exist in this repo and is supposed to
+be customized.
 
 ## bin dir
 
