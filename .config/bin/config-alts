@@ -33,7 +33,7 @@ example alts.conf:
     # example with subdir - here the $HOME/myproject dir must exist.
     myproject/hello
 
-The <default> and current OS (e.g. <osx> or <ubuntu>) configurations are
+The <default> and current OS (e.g. <macos> or <ubuntu>) configurations are
 always run before any specified name. The command is also run without
 just default and OS configuration when `config-setup` is called.
 
@@ -84,7 +84,7 @@ esac
 
 case "$(uname -a)" in
     *Darwin*)
-        OS=osx
+        OS=macos
         ;;
     *Ubuntu*) 
         OS=ubuntu

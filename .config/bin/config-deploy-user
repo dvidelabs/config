@@ -1,0 +1,110 @@
+#!/bin/sh
+
+usage() {
+echo "Fast default remote user creation, config upload, and setup on new system"
+echo ""
+echo "Usage: $(basename $0) [OPTIONS] [<admin>]@<host>"
+echo "OPTION: -i <identity-file> | --user <name> | --shell <shell>"
+echo ""
+echo "Uses same shell and username and public ~/.id_rsa.pub key as local system"
+echo "to set up a new account. config-setup is call and must therefore"
+echo "configured with suitable setup script. The username can be specified"
+echo "in order to create multiple accounts easily."
+echo ""
+echo "NOTE: detecting the shell using \$SHELL is not reliable, so use"
+echo "--shell option to set the shell if necessary."
+echo ""
+echo "The optioal identity-file is the private key for the admin account"
+echo ""
+echo "There are three stages:"
+echo ""
+echo "1) config-remote-user:"
+echo "   create or update the user on remote system using admin account"
+echo ""
+echo "2) config-upload:"
+echo "   upload .dot files repository to new account"
+echo ""
+echo "3) config-setup on remote system:"
+echo "   add system specific dot files and call setup script to install"
+echo "   things like editor plugins depending on the setup script"
+echo ""
+echo "NOTE: plenty of things can go wrong, so it is best to call this"
+echo "script after testing the setups more explicitly. Then it can be"
+echo "used to quickly add new functional accounts."
+echo ""
+echo "The script can also be used as a template to customize a setup."
+
+exit 1
+}
+
+IDENT=""
+UNAME=$USER
+USHELL=$(basename $SHELL)
+
+while [[ $# > 1 ]]
+do
+    key="$1"
+    case $key in
+        -i)
+            IDENT=" -i $2"
+            shift
+            ;;
+        --user)
+            UNAME="$2"
+            shift
+            ;;
+        --shell)
+            USHELL="$2"
+            shift
+            ;;
+        -h|--help)
+            usage
+            ;;
+        -*)
+            echo "unknown option: $key"
+            usage
+            ;;
+    esac
+    shift
+done
+
+# above parses at least two args, so handle special case
+case $1 in
+    -h|--help)
+        usage;;
+esac
+
+if [[ $# != 1 || "$1" == "-"* ]] ; then
+    echo "host name missing"
+    usage
+fi
+        
+# includes optional username
+HOST=$1
+
+# -f2 yields hostname regardless of whether it is prefixed by name@ or
+DOMAIN=$(echo $HOST | cut -d"@" -f2)
+
+set -e
+
+USERHOST="$UNAME@$DOMAIN"
+
+echo "Deploying user environment to new $USERHOST account using default ssh keys ..."
+
+echo "Connecting to @HOST"
+echo "adding account for $USERHOST ..."
+
+# use default ssh pub key
+config-remote-user --shell $USHELL --user $UNAME --sudo yes $HOST
+
+echo "Uploading .dot file repo and adding as remote to local repo ..."
+
+# use default private key
+config-upload --remote-add $USERHOST $USERHOST
+
+echo "Running setup script remotely ..."
+
+ssh $USERHOST "bash -s" < .config/bin/config-setup 
+
+echo "user deployed, connect with:"
+echo "ssh $USERHOST"

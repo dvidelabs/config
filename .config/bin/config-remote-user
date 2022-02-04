@@ -1,0 +1,304 @@
+#!/bin/sh
+
+# Adds a passwordless user if not exists.
+# Adds ssh public identify file to users authorized keys.
+# If the sudo group exists on the system, the user is added but this
+# will not in itself allow passwordless sudo. On Debian/Ubuntu flavored
+# systems, a sudoer file as added to achieve that. See comments below.
+# It is possible to run the script multiple times or apply to an
+# otherwise existing user. The script will skip the steps already taken.
+
+# NOTE: this script requires the public key file to end in .pub. This is
+# to avoid accidentally uploading a private key. There is no real
+# requirement, but just copy, rename, or symlink, the file if necessary.
+
+# NOTE: the -i option is the private ssh -i option for the accessing the admin
+# account, not the public identity file of the new user.
+
+# Run script with passwordless sudo root permissions on admin account.
+# This script requires an admin user to create the new user. Note that
+# this differs from ssh-copy-id by copying an id file to another user
+# rather than the one currently accepting the SSH connection.
+
+# NOTE: if launching new host, cloud-init.yaml is typically used to
+# add an admin user. This user is needed for this scrip to be able to
+# add other users. Why would you add other users? To have isolated
+# .dotfile configurations. While it is possible to a lot with the
+# cloud-init, it is not practical or desirable to modify in all cases
+# where available.
+#
+# For multipass (Canonicals Ubuntu VM driver), it is tricky to access
+# ssh proper although "multipass shell" will give shell access. Either
+# do that and copy paste own admin public key to .ssh/authorized keys,
+# then find IP address with "multipass list", then use "ubuntu@<ip" as
+# host argument to script. Alternative, add pubic key to config-yaml
+# and launch a new VM using
+# "multipass launch --cloud-init my-cloud-init.yaml"
+#
+# see also: https://github.com/canonical/multipass/issues/913#issuecomment-870526587
+#
+# cloud-init.yaml:
+#
+# ssh_authorized_keys:
+#    - <my-admin-public-key>
+
+
+
+
+set -e
+
+function usage() {
+    echo "Creates a new user account without password but with SSH login."
+    echo ""
+    echo "Usage: [OPTIONS] [<admin>@]<host>"
+    echo ""
+    echo "OPTIONS:"
+    echo "  -i <admin-identity-file>  ssh private key for admin, otherwise use ssh default"
+    echo "  --user <username>         name of new user"
+    echo "                            defaults to local \$USER"
+    echo "  --pub-key <key-file>.pub  local path to users public ssh key"
+    echo "                            only added if not present already"
+    echo "                            for safeguard, file must end with .pub"
+    echo "                            defaults to local ~/.ssh/id_rsa.pub"
+    echo "  --pub-key -               read users public key from stdin"
+    echo "  --sudo yes|no             add user to sudo group if exists"
+    echo "                            add to passwordless sudoers file if /etc/sudoers.d/ exists"
+    echo "                            defaults to yes"
+    echo "                            NOTE: --sudo no will NOT disable pre-existing permissions"
+    echo "                            and --sudo yes will not change an existing sudoer file"
+    echo "  --shell zsh|fish|bash|dash|ksh|csh|tcsh|sh"
+    echo "                            change user login shell"
+    echo "                            on some systems shell install will be attempted as necessary"
+    echo "  -h|--help                 this message"
+    echo ""
+    echo ""
+    echo "The user is added as passwordless sudoer by default."
+    echo "A home directory is always created if not present."
+    echo ""
+    echo "If the user account exists, the account will be updated."
+    echo "For example, a new key can be added or the shell changed."
+    echo ""
+    echo "This script is useful prior to configuring .dot files on a"
+    echo "new system in ordrer to support multi-user editor environments."
+    exit 1
+}
+
+IDENT=""
+USUDO="yes"
+UNAME="$USER"
+USHELL="bash"
+UPUB="$HOME/.ssh/id_rsa.pub"
+
+while [[ $# > 1 ]]
+do
+    key="$1"
+    case $key in
+        -i)
+            IDENT=" -i $2"
+            shift
+            ;;
+        --user)
+            UNAME="$2"
+            shift
+            ;;
+        --pub-key)
+            UPUB="$2"
+            shift
+            ;;
+        --sudo)
+            USUDO="$2"
+            shift
+            ;;
+        --shell)
+            USHELL="$2"
+            shift
+            ;;
+        -h|--help)
+            usage
+            ;;
+        -*)
+            echo "unknown option: $key"
+            usage
+            ;;
+    esac
+    shift
+done
+
+# above parses at least two args, so handle special case
+case $1 in
+    -h|--help)
+        usage;;
+esac
+        
+if [[ $# != 1 || "$1" == "-"* ]] ; then
+    echo "host name missing"
+    usage
+fi
+
+case $USUDO in
+    yes|no)
+        ;;
+    *)
+        echo "invalid sudo argument, expected yes or no"
+        exit 1
+        ;;
+esac
+
+case $USHELL in
+    "")
+        ;;
+    zsh|fish|bash|dash|ksh|csh|tcsh|sh)
+        ;;
+    *)
+    echo "invalid --shell argument: $USHELL"
+    usage
+esac
+
+HOST=$1
+
+
+# encode parameters since otherwise it seems to break
+B64UNAME=$(echo $UNAME | base64)
+
+case $UPUB in
+  -)
+     echo "loading public key from stdin"
+     B64UPUB=$(cat | base64)
+     ;;
+  *.pub)
+    if [ ! -e $UPUB ]; then
+        echo "ssh identity file missing: $UPUB"
+        exit 1
+    fi
+    if [ ! -f "$UPUB" ]; then
+        echo "ssh identity file not valid"
+        exit 1
+    fi
+    echo "loading public key: $UPUB"
+    B64UPUB=$(cat $UPUB | base64)
+    ;;
+  *) echo "ssh identity file must end with .pub: $UPUB"; exit 1;;
+esac
+
+ssh $IDENT $HOST B64UNAME=$B64UNAME B64UPUB=$B64UPUB USODU=$USUDO USHELL=$USHELL 'bash -s' <<'ENDSSH'
+
+case $USHELL in
+    "")
+        ;;
+    # don't allow arbitrary package install
+    zsh|fish|bash|dash|ksh|csh|tcsh|sh)
+        if ! which "$USHELL" >/dev/null; then
+            if ! which apt-get >/dev/null; then
+                echo "unable to automatically install shell on system"
+                exit 1
+            fi
+            echo "installing shell: $USHELL"
+            sudo apt-get update
+            sudo apt-get install -y "$USHELL"
+            if ! which "$USHELL" >/dev/null; then
+                echo "failed to install $USHELL, aborting"
+                exit 1
+            fi
+        fi
+        ;;
+    *)
+        echo "unsupported shell: $USHELL"
+        exit 1
+        ;;
+esac
+
+UNAME=$(echo $B64UNAME | base64 -d)
+UPUB=$(echo $B64UPUB | base64 -d)
+
+# shell escape name
+UNAME=$(printf %q "$UNAME")
+
+echo "adding or updating user: $UNAME"
+
+if id "$UNAME" &>/dev/null; then
+    echo "user $UNAME already exists"
+else
+    echo "adding new user $UNAME"
+    if ! sudo useradd -m $UNAME; then
+        echo "failed to add user, aborting"
+        exit 1
+    fi
+fi
+
+if [ -n "$USHELL" ]; then
+    echo "setting user shell to $USHELL"
+    sudo chsh -s $(which $USHELL) $UNAME
+fi
+
+if ! UHOME=$(sh -c "cd ~$UNAME && pwd"); then
+    echo "User $UNAME has no home directory, aborting"
+    exit 1
+fi
+
+# do not copy keys into wrong directory
+if [ ! "$(stat -c "%U" $UHOME)" = "$UNAME" ]; then
+    echo "WARNING: home directory exists but is not owned by user $UNAME"
+    echo "aborting"
+    exit 1
+fi
+
+
+if [ "$USODU" = "yes" ]; then
+    if id -nGz $UNAME | tr '\0' '\n' | grep '^sudo$' > /dev/null; then
+        echo "user $UNAME already in sudo group"
+    else
+        if getent group sudo >/dev/null; then
+            echo "adding user $UNAME to sudo group"
+            sudo usermod -a -G sudo $UNAME
+        else
+            echo "sudo group not found, skipping sudo permissions"
+        fi
+    fi
+
+    # Adding to sudoers typically allows for sudo, but requires a password (Ubuntu)
+    # Recent Debian (and Ubuntu) have a /etc/sudoers.d directory.
+    # If it exists, add a passwordless entry file. If not, do not attempt to
+    # update the old /etc/sudoers file automatically. There is no naming
+    # convention for sudoers.d file except they should not end with certain
+    # special characters. I.e. there is no specific username convention.
+
+    SUDODIR=/etc/sudoers.d
+    SUDOFILE=/etc/sudoers.d/$UNAME-user
+
+    if sudo test -d $SUDODIR; then
+        if sudo test -e $SUDOFILE; then
+            # this can also be used to prevent this script from permitting
+            # sudo by adding a blocking file, or by editing it after
+            # installation
+            echo "sudo file for user $UNAME already exists, skipping"
+        else
+            echo "adding passwordless sudo for $UNAME in $SUDOFILE"
+            echo "$UNAME ALL=(ALL) NOPASSWD:ALL" | sudo tee -a $SUDOFILE >/dev/null
+            sudo chmod 440 $SUDOFILE
+        fi
+    else
+        echo "$SUDODIR not present on system, skipping passwordless sudo setup"
+        echo "it is likely still possible to add manually with visudo command"
+        echo "sudo also possible if user password is added (or was added already)"
+    fi
+else
+    echo "skipping sudo processing"
+fi
+
+
+echo "home directory of user $UNAME: $UHOME"
+
+sudo -u $UNAME mkdir -p -m 700 $UHOME/.ssh
+sudo chown -R "$UNAME" $UHOME/.ssh
+
+sudo -u $UNAME touch $UHOME/.ssh/authorized_keys
+sudo -u $UNAME chmod 600 $UHOME/.ssh/authorized_keys
+if sudo -u $UNAME cat $UHOME/.ssh/authorized_keys | grep -w "$UPUB" >/dev/null; then
+    echo "SSH identify file already installed, skipping"
+else
+    echo "installing ssh identity file in $UHOME/.ssh/authorized_keys"
+    echo "$UPUB" | sudo -u $UNAME tee -a $UHOME/.ssh/authorized_keys >/dev/null
+fi
+
+ENDSSH
+

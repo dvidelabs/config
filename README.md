@@ -17,10 +17,19 @@ git with a detached `--worktree`. This requires no scripts and nearly
 no configuration at all. Still, we present a few scripts to help this
 process.
 
+There are also helper scripts to quickly set up and populate a remote
+account with a familiar environment, and to setup a new bare git repo
+on the remote account.
+
+NOTE: `.bashrc`, `.config/alts/*/bash.local`, `.config/alts/alts.conf`,
+and `.config/setup/*` are examples only.
+
+
 ## References
 
 - <https://developer.atlassian.com/blog/2016/02/best-way-to-store-dotfiles-git-bare-repo/>
 - <https://dotfiles.github.io>
+
 
 ## Quickstart
 
@@ -130,6 +139,7 @@ The remote repo name can be given as an upload argument.
 When logging in to the remote host after a push, use `config-sync` and
 optionally `config-alts` as discussed below.
 
+
 ## config-sync
 
 After pushing changes to a remote host the home directory needs to be
@@ -155,12 +165,15 @@ the git repository, not in the home directory.
 Note: config-upload should only be called once for each remote system.
 After that use `config push origin` and run `config-sync` as appropriate.
 
+
 ## config-alts
 
 It is possible to have some files different on different systems or for
 different purposes. For example, `~/.bash.local` might differ between MacOS
 and Linux. Other files such as `~/.gitconfig` might differ based on the
 current use by changing commit credentials.
+
+The .bashrc, .config/alts.conf, and .config/alts/*/.bash.local are example files to demonstrate the mechanism.
 
 The alternate system is very simple but powerful:
 
@@ -177,7 +190,7 @@ Each of these alternative directories act as a home directory for only
 these alternative files and the file is then linked into the real home
 directory.
 
-For example, to `~/.bash.local` to ubuntu, but not osx simply create or
+For example, to link `~/.bash.local` to ubuntu, but not osx simply create or
 move the file into `~/.config/alts/ubuntu/bash.local` and make sure
 `~/.bash.local` is absent. Then add a the entry the alts.conf and commit
 everything using `config add -f ...`:
@@ -235,11 +248,13 @@ therefore also `config-alts` with default and OS alternatives. This
 ensures, as an example, that the proper host variant of `.bash.local`
 will be present if `.bash.local` has been added as an alternative.
 
+
 ## config-install
 
 The `config-install` script is normally called by `config-upload` and is
 not used directly. However, it can be used to check out an existing repo
 with support for backuping up files that would be overwritten.
+
 
 ## config-setup
 
@@ -247,10 +262,56 @@ A tiny wrapper around `config-alts` that makes it possible to remember
 custom alternatives. At may be run a second time in a fresh shell to
 take advantage of settings linked in by the first run. See script source
 for details. NOTE: the config-setup refers to a .config/setup/setup.sh
-script by default. This doesn't exist in this repo and is supposed to
-be customized.
+script by default. The setup scripts in this repository is just an example
+and should be modified to suite specific needs.
 
-## bin dir
+
+## config-remote-user
+
+Assumes the current user can login to a remote host with SSH key and sudo
+permissions in order to create a new user. The new user is by default also given
+sudo passwordless sudo permission, but currently this only works on systems
+where the /etc/sudoers.d/ directory is supported, otherwise the user is only
+added to the sudo group, and only when that group exists. See --help message for
+more details. The new user is given a public SSH key for login, but not password
+is assigned. It is possible to call the script repeatedly, for example to add a
+new SSH public key file or to change the shell, but sudo permissions cannot be
+revoked once assigned.
+
+This operation is useful prior to calling config-upload on the new account such
+as to avoid polluting the primary system account with user specific prefernences
+such as editor configuration.
+
+The target system will have a mostly similar setup to the currently local setup
+if dot files are configured properly, but a private SSH file will not be
+uploaded automatically so it is not possible to spawn a new user from the remote
+system, or to access private git repositories etc..
+
+
+## config-remote-git
+
+Configures a git repository on a remote system instead of having to
+login with SSH and create a bare repository. Will optionally add a
+tracking branch and push local repository. See --help for more
+details.
+
+This is especially useful when working on a remote host without having
+access to a private SSH key that can be used to pull a private
+repository directly. The script may also be used following
+`config-remote-user sudo=no ...` to set up a git repository account
+where the git user has a home directory, but no sudo powers and no
+password.
+
+
+## config-deploy-user
+
+This is a helper script to quickly deploy the current local user onto a new
+system with same $SHELL, local config dot files, but adapated to the target host
+environment. Essentially config-remote-user, config-upload, and config-setup are
+called in sequence with suitable defaults. See --help for more details.
+
+
+## .config/bin dir
 
 The config scripts are hosted in ~/.config/bin by default and a path is
 added to this directory. This means that this bin directory is also
@@ -258,3 +319,17 @@ suitable for other custom scripts. For example if a script is used to
 push to github or update ghpages, it would make sense to place in
 .config/bin using `config add -f ~/.config/bin/myscript`. The alts
 mechanism can even be used to very the script by OS type.
+
+
+## .config/setup dir
+
+This is the default directory referenced by config-setup and is used to perform
+tool and plugin installations for shells and editors, etc. This is necessarily
+different across users and systems, so this should only be viewed as an
+incomplete example. The .config/setup/setup.sh is the entry point which spawns
+to specific system setups depending on the detected operating system. This
+detection is similar to the alternate dot file linking system, but unrelated,
+and it can be done in many other ways, e.g. by reading a system specific config
+file already linked. The alternate system could also be used to simple install
+the proper version of the setup.sh script.
+

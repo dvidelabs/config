@@ -1,0 +1,5 @@
+This directory should only be viewed as an example on how a custom setup
+script can be executed on different target systems. The default entry
+point used by config-setup is the setup.sh script in this directory.
+Everything else in the directory is controlled by that script.
+
